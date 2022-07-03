@@ -1,0 +1,66 @@
+from scipy.spatial.distance import euclidean
+import numpy as np
+import imutils
+import time
+import cv2
+
+'''
+来自于：Lya
+（from：Lya）
+大四在学校太无聊做的 
+（I did it in college because I was bored）
+'''
+
+
+def delay(content):
+    print('--------' + str(content) + '--------')
+    time.sleep(0.5)
+
+
+def set_camera_type():
+    delay('设置相机调用')
+    while True:
+        try:
+            set_type = int(input('摄像头调用（输入数字代号：0.内置，1.外置）：'))
+        except ValueError:
+            delay('输入参数类型错误')
+            continue
+        else:
+            if (set_type < 0) or (set_type > 1):
+                delay('输出参数不在范围内')
+                continue
+            elif set_type == 0:
+                delay('选择：内置摄像头')
+            else:
+                delay('选择：外置摄像头')
+            break
+    return set_type
+
+
+def call_camera():
+    camera = cv2.VideoCapture(camera_type, cv2.CAP_DSHOW)  # 创建摄像头对象
+    if camera.isOpened() is False:
+        delay('摄像头调用失败')
+        raise AssertionError
+    else:
+        delay('摄像头调用成功')
+        delay('正在选择参照物，按下回车确认选择')
+        while True:
+            frame = camera.read()[1]  # 返回捕获到的RGB
+            image = cv2.flip(frame, 1, dst=None)  # 镜像
+            cv2.imshow('Camera', image)  # 创建窗口
+            if (cv2.waitKey(1) > -1) or (cv2.getWindowProperty('Camera', cv2.WND_PROP_VISIBLE) < 1.0):  # 设置关闭条件
+                cv2.destroyWindow('Camera')  # 关闭窗口
+                break
+    return image
+
+
+def get_points(image):
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # 二值化
+    gaussian_blur = cv2.GaussianBlur(gray_image, (5, 5), 0)  # 高斯模糊
+    min_val, max_val = 50, 100
+    margin = cv2.Canny(gaussian_blur, min_val, max_val)  # 边沿检测
+    open_margin = cv2.dilate(margin, None, iterations=15)  # 开运算
+    contours = cv2.findContours(open_margin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 查找所有轮廓
+    points = imutils.grab_contours(contours)  # 返回所有路径的端点
+    return points
